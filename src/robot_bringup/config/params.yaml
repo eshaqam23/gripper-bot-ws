@@ -1,0 +1,7 @@
+# Placeholder hardware settings: replace once the microcontroller and motors are known
+motor_commands:
+  ros__parameters:
+    port: "/dev/rfcomm0"   # Bluetooth serial; USB is usually /dev/ttyACM0 or /dev/ttyUSB0
+    baud: 9600             # must match Serial.begin() in firmware/motor_logic
+    wheel_base: 0.2032     # meters between left and right wheels
+    max_speed: 0.5         # m/s that maps to full PWM (255)
