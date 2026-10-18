@@ -45,7 +45,7 @@ class SkeletonNode(Node):
             self.get_logger().info(f"[GRIPPER] Motor Angles -> {list(msg.data)}")
             # TODO: Add hardware PWM/GPIO calls here for the physical motors
         else:
-            self.get_logger().warn("[GRIPPER] Received invalid motor command array size.")
+            self.get_logger().warning("[GRIPPER] Received invalid motor command array size.")
 
 def main(args=None):
     rclpy.init(args=args)

@@ -72,7 +72,7 @@ class Motor_Commands(Node):
         try:
             self.set_gripper(list(msg.data))
         except ValueError as e:
-            self.get_logger().warn(f'Ignoring gripper_cmd: {e}')
+            self.get_logger().warning(f'Ignoring gripper_cmd: {e}')
 
     def grab_callback(self, request, response):
         self.set_gripper(self.gripper_closed)
@@ -107,7 +107,7 @@ class Motor_Commands(Node):
             module_msg.data = line
             self.module_pub.publish(module_msg)
             if line == 'ERR':
-                self.get_logger().warn('Microcontroller rejected a command')
+                self.get_logger().warning('Microcontroller rejected a command')
 
     def stop(self):
         self.send(STOP_MESSAGE)
