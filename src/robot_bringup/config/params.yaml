@@ -5,3 +5,7 @@ motor_commands:
     baud: 9600             # must match Serial.begin() in firmware/motor_logic
     wheel_base: 0.2032     # meters between left and right wheels
     max_speed: 0.5         # m/s that maps to full PWM (255)
+    # Gripper [claw, joint] servo angles in degrees, tune on the real gripper.
+    # Firmware also clamps to CLAW_/JOINT_ MIN/MAX in firmware/motor_logic/helpers.h
+    gripper_open_angles: [90.0, 90.0]
+    gripper_closed_angles: [20.0, 90.0]

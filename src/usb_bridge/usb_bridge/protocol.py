@@ -3,6 +3,7 @@ Serial message format shared with firmware/motor_logic.
 
 One command per line:
     D,leftPwm,leftDir,rightPwm,rightDir   drive (pwm 0-255, dir 1 = forward, 0 = backward)
+    G,clawAngle,jointAngle                gripper servo angles in degrees
 """
 
 
@@ -24,3 +25,12 @@ def drive_message(linear_velocity, angular_velocity, wheel_base, max_speed):
 
 
 STOP_MESSAGE = 'D,0,1,0,1\n'
+
+
+def gripper_message(angles):
+    """Convert [claw, joint] angles in degrees into a G command line."""
+    if len(angles) != 2:
+        raise ValueError(f'expected 2 gripper angles (claw, joint), got {len(angles)}')
+
+    claw, joint = (int(round(a)) for a in angles)
+    return f'G,{claw},{joint}\n'

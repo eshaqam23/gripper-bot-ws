@@ -1,4 +1,5 @@
-from usb_bridge.protocol import drive_message, STOP_MESSAGE
+import pytest
+from usb_bridge.protocol import drive_message, gripper_message, STOP_MESSAGE
 
 WHEEL_BASE = 0.2032
 MAX_SPEED = 0.5
@@ -28,3 +29,16 @@ def test_spin_left_in_place():
 
 def test_speed_is_clamped():
     assert drive_message(5.0, 0.0, WHEEL_BASE, MAX_SPEED) == 'D,255,1,255,1\n'
+
+
+def test_gripper_message():
+    assert gripper_message([20.0, 90.0]) == 'G,20,90\n'
+
+
+def test_gripper_message_rounds_angles():
+    assert gripper_message([44.6, 90.4]) == 'G,45,90\n'
+
+
+def test_gripper_message_needs_two_angles():
+    with pytest.raises(ValueError):
+        gripper_message([45.0])

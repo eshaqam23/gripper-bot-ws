@@ -1,10 +1,15 @@
+#include <Servo.h>
+
 #include "helpers.h"
 
 // Serial protocol (one command per line, 9600 baud):
 //   D,leftPwm,leftDir,rightPwm,rightDir   drive  (pwm 0-255, dir 1 = forward, 0 = backward)
+//   G,clawAngle,jointAngle                gripper servo angles in degrees
 // Replies "OK" or "ERR" to every line.
 
 char message[32];
+Servo claw;
+Servo joint;
 unsigned long lastDriveMs = 0;
 bool driving = false;
 
@@ -52,9 +57,27 @@ bool handleDrive(const char *args) {
   return true;
 }
 
+bool handleGripper(const char *args) {
+  int clawAngle, jointAngle;
+
+  if (sscanf(args, "%d,%d", &clawAngle, &jointAngle) != 2) {
+    return false;
+  }
+
+  claw.write(constrain(clawAngle, CLAW_MIN, CLAW_MAX));
+  joint.write(constrain(jointAngle, JOINT_MIN, JOINT_MAX));
+  return true;
+}
+
 void setup() {
   initPins();
   stall();
+
+  claw.attach(CLAW_PIN);
+  joint.attach(JOINT_PIN);
+  claw.write(CLAW_START);
+  joint.write(JOINT_START);
+
   Serial.println("Ready");
 }
 
@@ -67,6 +90,7 @@ void loop() {
     if (bytesRead >= 2 && message[1] == ',') {
       switch (message[0]) {
         case 'D': ok = handleDrive(message + 2); break;
+        case 'G': ok = handleGripper(message + 2); break;
       }
     }
 
