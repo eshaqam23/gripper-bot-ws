@@ -16,6 +16,11 @@ const int IN1 = 10;
 const int IN2 = 11;
 const int ENA = 6;
 
+// --------- Safety ---------- //
+// Stop the drive motors if no D command arrives within this window.
+// usb_bridge resends the current drive command at 10 Hz as a heartbeat.
+const unsigned long DRIVE_TIMEOUT_MS = 500;
+
 // ----------- Helper functions ---------- //
 void initPins();
 

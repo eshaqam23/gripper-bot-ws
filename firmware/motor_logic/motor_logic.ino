@@ -1,6 +1,12 @@
 #include "helpers.h"
 
+// Serial protocol (one command per line, 9600 baud):
+//   D,leftPwm,leftDir,rightPwm,rightDir   drive  (pwm 0-255, dir 1 = forward, 0 = backward)
+// Replies "OK" or "ERR" to every line.
+
 char message[32];
+unsigned long lastDriveMs = 0;
+bool driving = false;
 
 void setLeftMotor(int pwm, int dir) {
   pwm = constrain(pwm, 0, 255);
@@ -32,10 +38,23 @@ void setRightMotor(int pwm, int dir) {
   analogWrite(ENA, pwm);
 }
 
+bool handleDrive(const char *args) {
+  int leftPwm, leftDir, rightPwm, rightDir;
+
+  if (sscanf(args, "%d,%d,%d,%d", &leftPwm, &leftDir, &rightPwm, &rightDir) != 4) {
+    return false;
+  }
+
+  setLeftMotor(leftPwm, leftDir);
+  setRightMotor(rightPwm, rightDir);
+  lastDriveMs = millis();
+  driving = (leftPwm > 0 || rightPwm > 0);
+  return true;
+}
+
 void setup() {
   initPins();
-  analogWrite(ENA, 0);
-  analogWrite(ENB, 0);
+  stall();
   Serial.println("Ready");
 }
 
@@ -44,15 +63,19 @@ void loop() {
     int bytesRead = Serial.readBytesUntil('\n', message, sizeof(message) - 1);
     message[bytesRead] = '\0';
 
-    int leftPwm, leftDir, rightPwm, rightDir;
-
-    if (sscanf(message, "%d,%d,%d,%d", &leftPwm, &leftDir, &rightPwm, &rightDir) == 4) {
-      setLeftMotor(leftPwm, leftDir);
-      setRightMotor(rightPwm, rightDir);
-      Serial.println("OK");
-    } else {
-      Serial.println("ERR");
+    bool ok = false;
+    if (bytesRead >= 2 && message[1] == ',') {
+      switch (message[0]) {
+        case 'D': ok = handleDrive(message + 2); break;
+      }
     }
+
+    Serial.println(ok ? "OK" : "ERR");
+  }
+
+  // Safety stop: lost connection or ROS side stopped sending
+  if (driving && millis() - lastDriveMs > DRIVE_TIMEOUT_MS) {
+    stall();
+    driving = false;
   }
 }
-

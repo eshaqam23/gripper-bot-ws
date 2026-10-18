@@ -3,8 +3,8 @@ from rclpy.node import Node
 from geometry_msgs.msg import Twist
 from std_msgs.msg import String
 import serial
-# import math
-# import numpy as np
+
+from usb_bridge.protocol import drive_message, STOP_MESSAGE
 
 
 class Motor_Commands(Node):
@@ -36,43 +36,39 @@ class Motor_Commands(Node):
         # Microcontroller connection
         self.ser = serial.Serial(port, baud, timeout=1)
 
-    def cmd_vel_callback(self, msg):
-        linear_velocity = msg.linear.x
-        angular_velocity = msg.angular.z
-        wheel_base = self.wheel_base
+        # Resend the current drive command at 10 Hz so the microcontroller's
+        # safety timeout only stops the car if this node or the link dies
+        self.drive_msg = STOP_MESSAGE
+        self.heartbeat_timer = self.create_timer(0.1, self.heartbeat_callback)
 
-        # calculate velocity per wheel
-        left_velocity = linear_velocity - (angular_velocity * wheel_base) / 2
-        right_velocity = linear_velocity + (angular_velocity * wheel_base) / 2
-
-        # determine wheel speed
-        left_speed = abs(left_velocity)
-        right_speed = abs(right_velocity)
-
-        # determine wheel direction
-        left_forward = 0 if left_velocity < 0 else 1
-        right_forward = 0 if right_velocity < 0 else 1
-
-        # normalize wheel velocity between 0 and 255
-        # max(left_speed) = max_speed, max(right_speed) = max_speed
-        left_speed_normalized = min(int(left_speed / self.max_speed * 255), 255)
-        right_speed_normalized = min(int(right_speed / self.max_speed * 255), 255)
-
-        message = f"{left_speed_normalized},{left_forward},{right_speed_normalized},{right_forward}\n"
+    def send(self, message):
         self.ser.write(message.encode("utf-8"))
 
-        # Message sent by ESP
+    def cmd_vel_callback(self, msg):
+        self.drive_msg = drive_message(
+            msg.linear.x, msg.angular.z, self.wheel_base, self.max_speed
+        )
+        self.send(self.drive_msg)
+
+        # Message sent to ESP
         ros_msg = String()
-        ros_msg.data = message
+        ros_msg.data = self.drive_msg
         self.ros_pub.publish(ros_msg)
 
-        # Message received by ESP
-        if self.ser.in_waiting > 0:
-            line = self.ser.readline().decode("utf-8").rstrip()
+    def heartbeat_callback(self):
+        self.send(self.drive_msg)
+
+        # Messages received from ESP
+        while self.ser.in_waiting > 0:
+            line = self.ser.readline().decode("utf-8", errors="replace").rstrip()
             module_msg = String()
             module_msg.data = line
             self.module_pub.publish(module_msg)
-            self.get_logger().info(f"Publishing: {line}")
+            if line == "ERR":
+                self.get_logger().warn("Microcontroller rejected a command")
+
+    def stop(self):
+        self.send(STOP_MESSAGE)
 
 
 def main(args=None):
@@ -83,6 +79,7 @@ def main(args=None):
     except KeyboardInterrupt:
         node.get_logger().info("Shutting down Motor Commands node")
     finally:
+        node.stop()
         node.destroy_node()
         rclpy.shutdown()
 
