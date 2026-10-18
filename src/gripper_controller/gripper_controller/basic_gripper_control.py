@@ -16,7 +16,7 @@ from std_msgs.msg import Float32MultiArray
 
 class SkeletonNode(Node):
     def __init__(self):
-        super().__init__('skeleton_node')
+        super().__init__('gripper_controller')
         
         #Declare and get parameters from params.yaml
         self.declare_parameter('message', 'Default hello message')
