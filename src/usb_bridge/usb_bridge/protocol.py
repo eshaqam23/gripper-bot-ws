@@ -1,4 +1,5 @@
-"""Serial message format shared with firmware/motor_logic.
+"""
+Serial message format shared with firmware/motor_logic.
 
 One command per line:
     D,leftPwm,leftDir,rightPwm,rightDir   drive (pwm 0-255, dir 1 = forward, 0 = backward)
@@ -19,7 +20,7 @@ def drive_message(linear_velocity, angular_velocity, wheel_base, max_speed):
     left_pwm = min(int(abs(left_velocity) / max_speed * 255), 255)
     right_pwm = min(int(abs(right_velocity) / max_speed * 255), 255)
 
-    return f"D,{left_pwm},{left_forward},{right_pwm},{right_forward}\n"
+    return f'D,{left_pwm},{left_forward},{right_pwm},{right_forward}\n'
 
 
-STOP_MESSAGE = "D,0,1,0,1\n"
+STOP_MESSAGE = 'D,0,1,0,1\n'

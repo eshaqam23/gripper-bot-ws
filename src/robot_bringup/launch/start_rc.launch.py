@@ -7,22 +7,22 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     config_file = os.path.join(
-        get_package_share_directory("robot_bringup"), "config", "params.yaml"
+        get_package_share_directory('robot_bringup'), 'config', 'params.yaml'
     )
 
     # -------------------- pub_cmds --------------------- #
     teleop_twist_keyboard = Node(
-        package="teleop_twist_keyboard",
-        executable="teleop_twist_keyboard",
-        output="screen",
-        prefix="xterm -e",
+        package='teleop_twist_keyboard',
+        executable='teleop_twist_keyboard',
+        output='screen',
+        prefix='xterm -e',
     )
 
     # --------------------- control --------------------- #
     motor_commands = Node(
-        package="usb_bridge",
-        executable="motor_commands",
-        output="screen",
+        package='usb_bridge',
+        executable='motor_commands',
+        output='screen',
         parameters=[config_file],
     )
 
