@@ -16,6 +16,11 @@ setup(
     maintainer_email='eshaqam23@vt.edu',
     description='TODO: Package description',
     license='TODO: License declaration',
+    extras_require={
+        'test': [
+            'pytest',
+        ],
+    },
     entry_points={
         'console_scripts': ['motor_commands = usb_bridge.motor_commands:main'],
     },
