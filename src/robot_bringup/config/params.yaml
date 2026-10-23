@@ -12,5 +12,5 @@ motor_commands:
     # TEMPORARY: the claw horn slipped ~90 deg, so open needs a negative angle
     # (uses CLAW_MIN = -20). Lower = more open. Retune after the horn is re-seated.
     claw_open_angle: -20.0
-    claw_closed_angle: 60.0
+    claw_closed_angle: 180.0
     joint_angle: 90.0      # joint angle at startup and during grab/release

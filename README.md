@@ -1,7 +1,7 @@
 # gripper-bot-ws
 
-ROS 2 workspace for the gripper bot: an RC car with a two-servo gripper (claw + joint)
-that can drive around and grab/release objects.
+ROS 2 workspace for the gripper bot: an RC car with a servo gripper (claw, plus an
+optional joint servo that is still TBD) that can drive around and grab/release objects.
 
 ```
 teleop_twist_keyboard ──/cmd_vel──┐
@@ -44,20 +44,71 @@ One command per line at 9600 baud; the microcontroller replies `OK` or `ERR` to 
 Safety: the firmware stops the drive motors if no `D` command arrives for 500 ms
 (for example if the bridge crashes or the link drops).
 
+## Setup
+
+On the ROS machine (Ubuntu with ROS 2 installed), from the workspace root:
+
+```bash
+sudo apt install xterm python3-serial ros-$ROS_DISTRO-teleop-twist-keyboard
+rosdep install --from-paths src --ignore-src -y   # or let rosdep find the above
+sudo usermod -aG dialout $USER                    # serial port access; log out and back in
+```
+
+## Flash the firmware
+
+Open `firmware/motor_logic/motor_logic.ino` in the Arduino IDE, pick the board under
+Tools > Board, then upload:
+
+- **ESP32-C6:** install "esp32" by Espressif **3.x** in the Boards Manager (older versions
+  don't support the C6), then select the ESP32-C6 board.
+- **Arduino Uno (bench tests):** works as is; needs the Servo library.
+
+Pins are set in `firmware/motor_logic/helpers.h`, one block per board. To check the
+firmware on its own, open Serial Monitor (9600 baud, Newline) and type a command such as
+`G,-20,90`; it replies `OK`. Close Serial Monitor before starting ROS, only one program can
+use the port.
+
 ## Build
 
 ```bash
 colcon build --symlink-install
-source install/setup.bash
+source install/setup.bash   # in every new terminal
 ```
 
 ## Run
 
+Find the microcontroller's port (usually `/dev/ttyACM0`):
+
 ```bash
-ros2 launch robot_bringup start_rc.launch.py   # microcontroller connected
+ls /dev/ttyACM* /dev/ttyUSB*
+```
+
+```bash
+ros2 launch robot_bringup start_rc.launch.py port:=/dev/ttyACM0
 ```
 
 Two xterm windows open: drive with the teleop window, grab/release with the gripper window.
+Wait ~2 s after launching; opening the port resets the microcontroller.
+
+## Gripper commands
+
+The claw is commanded as a position: 0.0 = open, 1.0 = closed. `claw_open_angle` and
+`claw_closed_angle` in `src/robot_bringup/config/params.yaml` set the servo angle at each end
+(relaunch after changing them, no reflash needed).
+
+| How | Command | Effect |
+|---|---|---|
+| Keyboard | `g` / `r` in the gripper window (`q` quits) | grab (1.0) / release (0.0) |
+| Services | `ros2 service call /gripper/grab std_srvs/srv/Trigger` (or `/gripper/release`) | same as `g` / `r` |
+| Position | `ros2 topic pub --once /gripper/position std_msgs/msg/Float32 "{data: 0.5}"` | any position 0.0-1.0 |
+| Raw angles | `ros2 topic pub --once /gripper_cmd std_msgs/msg/Float32MultiArray "{data: [120, 90]}"` | exact `[claw, joint]` servo angles, for tuning |
+
+To see what is sent and what the microcontroller replies:
+
+```bash
+ros2 topic echo /ros_data   # lines sent, e.g. G,180,90 (plus the D heartbeat at 10 Hz)
+ros2 topic echo /usb_data   # replies, should be OK
+```
 
 ### Without hardware
 
