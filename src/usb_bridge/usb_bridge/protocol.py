@@ -4,6 +4,9 @@ Serial message format shared with firmware/motor_logic.
 One command per line:
     D,leftPwm,leftDir,rightPwm,rightDir   drive (pwm 0-255, dir 1 = forward, 0 = backward)
     G,clawAngle,jointAngle                gripper servo angles in degrees
+
+The ROS side commands the claw as a position from 0.0 (open) to 1.0 (closed);
+claw_angle() turns that into the servo angle sent in the G command.
 """
 
 
@@ -34,3 +37,9 @@ def gripper_message(angles):
 
     claw, joint = (int(round(a)) for a in angles)
     return f'G,{claw},{joint}\n'
+
+
+def claw_angle(position, open_angle, closed_angle):
+    """Convert a claw position (0.0 = open, 1.0 = closed) into a servo angle."""
+    position = min(max(position, 0.0), 1.0)
+    return open_angle + position * (closed_angle - open_angle)

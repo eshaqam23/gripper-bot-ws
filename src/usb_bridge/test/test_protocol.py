@@ -1,5 +1,5 @@
 import pytest
-from usb_bridge.protocol import drive_message, gripper_message, STOP_MESSAGE
+from usb_bridge.protocol import claw_angle, drive_message, gripper_message, STOP_MESSAGE
 
 WHEEL_BASE = 0.2032
 MAX_SPEED = 0.5
@@ -42,3 +42,22 @@ def test_gripper_message_rounds_angles():
 def test_gripper_message_needs_two_angles():
     with pytest.raises(ValueError):
         gripper_message([45.0])
+
+
+def test_claw_open_and_closed():
+    assert claw_angle(0.0, 80.0, 150.0) == 80.0
+    assert claw_angle(1.0, 80.0, 150.0) == 150.0
+
+
+def test_claw_halfway():
+    assert claw_angle(0.5, 80.0, 150.0) == 115.0
+
+
+def test_claw_closing_can_lower_the_angle():
+    # works whichever way the servo turns to close
+    assert claw_angle(0.25, 90.0, 10.0) == 70.0
+
+
+def test_claw_position_is_clamped():
+    assert claw_angle(-1.0, 80.0, 150.0) == 80.0
+    assert claw_angle(2.0, 80.0, 150.0) == 150.0

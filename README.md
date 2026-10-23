@@ -14,15 +14,16 @@ gripper_keys ──/gripper/grab, ────┘
 
 - `src/usb_bridge` — `motor_commands` node, the only node that talks to the microcontroller:
   - `/cmd_vel` (`geometry_msgs/Twist`) → drive command
-  - `/gripper_cmd` (`std_msgs/Float32MultiArray`, `[claw, joint]` degrees) → exact gripper angles
-  - `/gripper/grab`, `/gripper/release` (`std_srvs/Trigger`) → closed / open angles from params
+  - `/gripper/position` (`std_msgs/Float32`, 0.0 = open, 1.0 = closed) → claw position,
+    mapped to servo angles by `claw_open_angle` / `claw_closed_angle` in params
+  - `/gripper/grab`, `/gripper/release` (`std_srvs/Trigger`) → claw position 1.0 / 0.0
+  - `/gripper_cmd` (`std_msgs/Float32MultiArray`, `[claw, joint]` degrees) → exact servo
+    angles, for tuning the open/closed angles
   - resends the drive command at 10 Hz as a heartbeat; publishes sent lines on `/ros_data`
     and microcontroller replies on `/usb_data`
-- `src/gripper_controller` — `gripper_keys` keyboard node (g = grab, r = release, q = quit),
-  plus the original `gripper_node` that just logs commands
+- `src/gripper_controller` — `gripper_keys` keyboard node (g = grab, r = release, q = quit)
 - `src/robot_bringup` — `start_rc.launch.py` starts teleop, gripper keys and the bridge;
   all hardware settings live in `config/params.yaml`
-- `src/gripper_bot_skeleton` — hello-world node, launch file and params
 - `firmware/motor_logic` — Arduino sketch: L298N drive motors + gripper servos
   (not built by colcon; flash it with the Arduino IDE or `arduino-cli`)
 - `tools/fake_arduino.py` — stands in for the microcontroller so everything can be tested
@@ -50,8 +51,7 @@ source install/setup.bash
 ## Run
 
 ```bash
-ros2 launch robot_bringup start_rc.launch.py          # microcontroller connected
-ros2 launch gripper_bot_skeleton skeleton.launch.py   # hello-world check
+ros2 launch robot_bringup start_rc.launch.py   # microcontroller connected
 ```
 
 Two xterm windows open: drive with the teleop window, grab/release with the gripper window.
@@ -74,6 +74,6 @@ colcon test --packages-select usb_bridge robot_bringup && colcon test-result --v
 ## Still placeholders (fill in once the hardware is known)
 
 - `src/robot_bringup/config/params.yaml` — serial port, baud, wheel base, max speed,
-  gripper open/closed angles
+  claw open/closed angles
 - `firmware/motor_logic/helpers.h` — motor and servo pins, servo angle limits,
   servo start angles, drive timeout
