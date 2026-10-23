@@ -1,0 +1,16 @@
+# Placeholder hardware settings: replace once the microcontroller and motors are known
+motor_commands:
+  ros__parameters:
+    port: "/dev/ttyACM0"   # USB serial to the ESP32-C6 (no classic Bluetooth); may be /dev/ttyUSB0
+    baud: 9600             # must match Serial.begin() in firmware/motor_logic
+    wheel_base: 0.2032     # meters between left and right wheels
+    max_speed: 0.5         # m/s that maps to full PWM (255)
+    # Claw is commanded as a position: 0.0 = open, 1.0 = closed (gripper/position,
+    # grab = 1.0, release = 0.0). These are the claw servo angles in degrees at
+    # each end; tune them on the real gripper with raw angles on /gripper_cmd.
+    # Firmware also clamps to CLAW_/JOINT_ MIN/MAX in firmware/motor_logic/helpers.h
+    # TEMPORARY: the claw horn slipped ~90 deg, so open needs a negative angle
+    # (uses CLAW_MIN = -20). Lower = more open. Retune after the horn is re-seated.
+    claw_open_angle: -20.0
+    claw_closed_angle: 180.0
+    joint_angle: 90.0      # joint angle at startup and during grab/release
