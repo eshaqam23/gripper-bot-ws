@@ -31,7 +31,6 @@ gripper_keys ──/gripper/grab, ────┘
   Not built by colcon; flash it with the Arduino IDE or `arduino-cli`.
 - `tools/fake_arduino.py` — stands in for the microcontroller so everything can be tested
   without hardware
-- `src/gripper_bot_skeleton` — original template package, not used by the launch file
 
 ## Serial protocol
 
