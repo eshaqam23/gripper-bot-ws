@@ -23,7 +23,9 @@ DRIVE = re.compile(r'^D,(-?\d+),(-?\d+),(-?\d+),(-?\d+)$')
 GRIPPER = re.compile(r'^G,(-?\d+),(-?\d+)$')
 
 DRIVE_TIMEOUT_S = 0.5  # DRIVE_TIMEOUT_MS in helpers.h
-SERVO_MIN, SERVO_MAX = 0, 180  # CLAW_/JOINT_ MIN/MAX in helpers.h
+CLAW_OFFSET = 0  # CLAW_OFFSET in helpers.h
+CLAW_MIN, CLAW_MAX = -20, 180  # CLAW_MIN/MAX in helpers.h (servo angle, after offset)
+JOINT_MIN, JOINT_MAX = 0, 180  # JOINT_MIN/MAX in helpers.h
 
 
 def clamp(value, low, high):
@@ -42,7 +44,7 @@ class FakeArduino:
 
     def __init__(self):
         self.drive = (0, 1, 0, 1)
-        self.gripper = (90, 90)
+        self.gripper = (0, 90)
         self.last_drive = time.monotonic()
 
     def handle(self, line):
@@ -59,8 +61,11 @@ class FakeArduino:
 
         m = GRIPPER.match(line)
         if m:
-            gripper = tuple(clamp(int(g), SERVO_MIN, SERVO_MAX) for g in m.groups())
-            print(f'[GRIPPER] claw {gripper[0]} deg, joint {gripper[1]} deg', flush=True)
+            claw, joint = (int(g) for g in m.groups())
+            servo = clamp(claw + CLAW_OFFSET, CLAW_MIN, CLAW_MAX)
+            gripper = (servo, clamp(joint, JOINT_MIN, JOINT_MAX))
+            print(f'[GRIPPER] claw {claw} deg (servo {servo} deg), joint {gripper[1]} deg',
+                  flush=True)
             self.gripper = gripper
             return 'OK'
 

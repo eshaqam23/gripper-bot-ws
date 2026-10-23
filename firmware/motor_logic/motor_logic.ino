@@ -57,6 +57,19 @@ bool handleDrive(const char *args) {
   return true;
 }
 
+// Same scale as Servo::write() (0 deg = 544 us, 180 deg = 2400 us), but it also
+// works below 0 / above 180 so the claw can use the servo's extra travel.
+int angleToPulse(int angle) {
+  return map(angle, 0, 180, MIN_PULSE_WIDTH, MAX_PULSE_WIDTH);
+}
+
+// Shift by CLAW_OFFSET to line up with the gripper, then keep the servo
+// inside its safe range.
+void writeClaw(int angle) {
+  int servoAngle = constrain(angle + CLAW_OFFSET, CLAW_MIN, CLAW_MAX);
+  claw.writeMicroseconds(angleToPulse(servoAngle));
+}
+
 bool handleGripper(const char *args) {
   int clawAngle, jointAngle;
 
@@ -64,7 +77,7 @@ bool handleGripper(const char *args) {
     return false;
   }
 
-  claw.write(constrain(clawAngle, CLAW_MIN, CLAW_MAX));
+  writeClaw(clawAngle);
   joint.write(constrain(jointAngle, JOINT_MIN, JOINT_MAX));
   return true;
 }
@@ -73,9 +86,10 @@ void setup() {
   initPins();
   stall();
 
-  claw.attach(CLAW_PIN);
+  // Widen the claw's allowed pulse range so angles below 0 aren't cut off
+  claw.attach(CLAW_PIN, angleToPulse(CLAW_MIN), angleToPulse(CLAW_MAX));
   joint.attach(JOINT_PIN);
-  claw.write(CLAW_START);
+  writeClaw(CLAW_START);
   joint.write(JOINT_START);
 
   Serial.println("Ready");
