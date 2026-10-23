@@ -1,3 +1,0 @@
-skeleton_node:
-  ros__parameters:
-    message: "Hello from gripper_bot_skeleton."
