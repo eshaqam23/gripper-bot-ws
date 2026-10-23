@@ -51,7 +51,7 @@ On the ROS machine (Ubuntu with ROS 2 installed), get the code and load ROS:
 ```bash
 git clone https://github.com/eshaqam23/gripper-bot-ws.git
 cd gripper-bot-ws
-source /opt/ros/$ROS_DISTRO/setup.bash   # e.g. /opt/ros/humble; needed in every new terminal
+source /opt/ros/humble/setup.bash   # your ROS version (ls /opt/ros); every new terminal
 ```
 
 Already cloned? Run `git pull` inside the folder instead. Then install dependencies (one time):
