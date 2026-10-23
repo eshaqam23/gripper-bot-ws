@@ -31,6 +31,7 @@ gripper_keys ──/gripper/grab, ────┘
   Not built by colcon; flash it with the Arduino IDE or `arduino-cli`.
 - `tools/fake_arduino.py` — stands in for the microcontroller so everything can be tested
   without hardware
+- `src/gripper_bot_skeleton` — original template package, not used by the launch file
 
 ## Serial protocol
 
@@ -60,7 +61,9 @@ Open `firmware/motor_logic/motor_logic.ino` in the Arduino IDE, pick the board u
 Tools > Board, then upload:
 
 - **ESP32-C6:** install "esp32" by Espressif **3.x** in the Boards Manager (older versions
-  don't support the C6), then select the ESP32-C6 board.
+  don't support the C6), then select the ESP32-C6 board. If you plug into the board's
+  native USB port (not the UART one), set Tools > USB CDC On Boot > Enabled, or nothing
+  shows up in Serial Monitor.
 - **Arduino Uno (bench tests):** works as is; needs the Servo library.
 
 Pins are set in `firmware/motor_logic/helpers.h`, one block per board. To check the
@@ -88,7 +91,7 @@ ros2 launch robot_bringup start_rc.launch.py port:=/dev/ttyACM0
 ```
 
 Two xterm windows open: drive with the teleop window, grab/release with the gripper window.
-Wait ~2 s after launching; opening the port resets the microcontroller.
+Wait ~2 s after launching; opening the port can reset the microcontroller (the Uno does).
 
 ## Gripper commands
 
@@ -122,12 +125,13 @@ The fake Arduino prints what the motors and gripper would do.
 ## Tests
 
 ```bash
-colcon test --packages-select usb_bridge robot_bringup && colcon test-result --verbose
+colcon test --packages-select usb_bridge robot_bringup gripper_controller && colcon test-result --verbose
 ```
 
 ## Still placeholders (fill in once the hardware is known)
 
 - `src/robot_bringup/config/params.yaml` — serial port, baud, wheel base, max speed,
   claw open/closed angles
-- `firmware/motor_logic/helpers.h` — ESP32-C6 ENA/ENB and servo pins, servo angle
-  limits, servo start angles, drive timeout
+- `firmware/motor_logic/helpers.h` — ESP32-C6 ENA/ENB and claw pins, `JOINT_PIN`
+  (-1 until we know if there is a joint servo), servo angle limits, servo start angles,
+  drive timeout
