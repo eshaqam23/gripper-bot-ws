@@ -46,10 +46,18 @@ Safety: the firmware stops the drive motors if no `D` command arrives for 500 ms
 
 ## Setup
 
-On the ROS machine (Ubuntu with ROS 2 installed), from the workspace root:
+On the ROS machine (Ubuntu with ROS 2 installed), get the code and load ROS:
 
 ```bash
-sudo apt install xterm python3-serial ros-$ROS_DISTRO-teleop-twist-keyboard
+git clone https://github.com/eshaqam23/gripper-bot-ws.git
+cd gripper-bot-ws
+source /opt/ros/$ROS_DISTRO/setup.bash   # e.g. /opt/ros/humble; needed in every new terminal
+```
+
+Already cloned? Run `git pull` inside the folder instead. Then install dependencies (one time):
+
+```bash
+sudo apt install xterm python3-serial python3-colcon-common-extensions ros-$ROS_DISTRO-teleop-twist-keyboard
 rosdep install --from-paths src --ignore-src -y   # or let rosdep find the above
 sudo usermod -aG dialout $USER                    # serial port access; log out and back in
 ```
@@ -74,7 +82,7 @@ use the port.
 
 ```bash
 colcon build --symlink-install
-source install/setup.bash   # in every new terminal
+source install/setup.bash   # in every new terminal, after sourcing /opt/ros
 ```
 
 ## Run
@@ -91,6 +99,13 @@ ros2 launch robot_bringup start_rc.launch.py port:=/dev/ttyACM0
 
 Two xterm windows open: drive with the teleop window, grab/release with the gripper window.
 Wait ~2 s after launching; opening the port can reset the microcontroller (the Uno does).
+
+If it fails with "permission denied" on the port and you haven't logged out since the
+`dialout` step, this quick fix works until the board is unplugged:
+
+```bash
+sudo chmod a+rw /dev/ttyACM0
+```
 
 ## Gripper commands
 
