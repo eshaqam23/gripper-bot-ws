@@ -23,7 +23,7 @@ class Motor_Commands(Node):
 
         # Hardware settings: placeholders until the real metrics are known
         # (override in config/params.yaml)
-        self.declare_parameter('port', '/dev/rfcomm0')
+        self.declare_parameter('port', '/dev/ttyACM0')
         self.declare_parameter('baud', 9600)
         self.declare_parameter('wheel_base', 0.2032)  # meters (8 inches)
         self.declare_parameter('max_speed', 0.5)  # m/s that maps to PWM 255

@@ -24,8 +24,11 @@ gripper_keys ──/gripper/grab, ────┘
 - `src/gripper_controller` — `gripper_keys` keyboard node (g = grab, r = release, q = quit)
 - `src/robot_bringup` — `start_rc.launch.py` starts teleop, gripper keys and the bridge;
   all hardware settings live in `config/params.yaml`
-- `firmware/motor_logic` — Arduino sketch: L298N drive motors + gripper servos
-  (not built by colcon; flash it with the Arduino IDE or `arduino-cli`)
+- `firmware/motor_logic` — Arduino sketch: L298N drive motors + gripper servos.
+  Builds for the ESP32-C6 (ESP32 Arduino core 3.x) or an Arduino Uno for bench tests;
+  all pins are in `helpers.h`, one block per board, picked by the board selected in the IDE.
+  Talks over USB serial (the C6 has no classic Bluetooth).
+  Not built by colcon; flash it with the Arduino IDE or `arduino-cli`.
 - `tools/fake_arduino.py` — stands in for the microcontroller so everything can be tested
   without hardware
 
@@ -75,5 +78,5 @@ colcon test --packages-select usb_bridge robot_bringup && colcon test-result --v
 
 - `src/robot_bringup/config/params.yaml` — serial port, baud, wheel base, max speed,
   claw open/closed angles
-- `firmware/motor_logic/helpers.h` — motor and servo pins, servo angle limits,
-  servo start angles, drive timeout
+- `firmware/motor_logic/helpers.h` — ESP32-C6 ENA/ENB and servo pins, servo angle
+  limits, servo start angles, drive timeout
