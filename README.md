@@ -44,22 +44,24 @@ One command per line at 9600 baud; the microcontroller replies `OK` or `ERR` to 
 Safety: the firmware stops the drive motors if no `D` command arrives for 500 ms
 (for example if the bridge crashes or the link drops).
 
-## Setup
+## Setup (one time, on the ROS machine)
 
-On the ROS machine (Ubuntu with ROS 2 installed), get the code and load ROS:
+Ubuntu with ROS 2 Jazzy (check yours with `ls /opt/ros` and swap `jazzy` below if needed):
 
 ```bash
+cd ~
 git clone https://github.com/eshaqam23/gripper-bot-ws.git
-cd gripper-bot-ws
-source /opt/ros/humble/setup.bash   # your ROS version (ls /opt/ros); every new terminal
+cd ~/gripper-bot-ws
+source /opt/ros/jazzy/setup.bash
+sudo apt install -y xterm python3-serial python3-colcon-common-extensions ros-jazzy-teleop-twist-keyboard
+sudo usermod -aG dialout $USER   # serial port access; log out and back in once
+colcon build
 ```
 
-Already cloned? Run `git pull` inside the folder instead. Then install dependencies (one time):
+Optional, so every new terminal loads ROS automatically:
 
 ```bash
-sudo apt install xterm python3-serial python3-colcon-common-extensions ros-$ROS_DISTRO-teleop-twist-keyboard
-rosdep install --from-paths src --ignore-src -y   # or let rosdep find the above
-sudo usermod -aG dialout $USER                    # serial port access; log out and back in
+echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
 ```
 
 ## Flash the firmware
@@ -78,34 +80,40 @@ firmware on its own, open Serial Monitor (9600 baud, Newline) and type a command
 `G,-20,90`; it replies `OK`. Close Serial Monitor before starting ROS, only one program can
 use the port.
 
-## Build
+## Run (every time)
+
+Plug the microcontroller into the ROS machine by USB, then in a new terminal:
 
 ```bash
-colcon build --symlink-install
-source install/setup.bash   # in every new terminal, after sourcing /opt/ros
-```
-
-## Run
-
-Find the microcontroller's port (usually `/dev/ttyACM0`):
-
-```bash
-ls /dev/ttyACM* /dev/ttyUSB*
-```
-
-```bash
+cd ~/gripper-bot-ws        # your repo folder
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
 ros2 launch robot_bringup start_rc.launch.py port:=/dev/ttyACM0
 ```
 
-Two xterm windows open: drive with the teleop window, grab/release with the gripper window.
-Wait ~2 s after launching; opening the port can reset the microcontroller (the Uno does).
+Two xterm windows open: drive with the teleop window, grab/release with the gripper keys
+window (`g` / `r`). Wait ~2 s after launching; opening the port can reset the
+microcontroller (the Uno does). Ctrl+C in the launch terminal stops everything.
 
-If it fails with "permission denied" on the port and you haven't logged out since the
-`dialout` step, this quick fix works until the board is unplugged:
+After pulling new code, rebuild before the `source install/setup.bash` line:
 
 ```bash
-sudo chmod a+rw /dev/ttyACM0
+git pull
+colcon build
 ```
+
+### Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `ros2: command not found` | ROS isn't loaded in this terminal: `source /opt/ros/jazzy/setup.bash` |
+| `Package 'robot_bringup' not found` | Not built or not sourced: from the repo folder, `colcon build` then `source install/setup.bash` |
+| Build fails (e.g. after an earlier failed build) | Clean and rebuild: `rm -rf build install log && colcon build` |
+| Which port? | `ls /dev/ttyACM*` (an Uno is usually `/dev/ttyACM0`); `ls -l /dev/serial/by-id/` shows each board's name. "cannot access /dev/ttyUSB*" is harmless |
+| No port at all | Try another USB cable (some are power only) or port; on Ubuntu with a CH340 clone board, `sudo apt remove brltty` |
+| `Permission denied` on the port | Haven't logged out since the `dialout` step: `sudo chmod a+rw /dev/ttyACM0` (lasts until unplugged) |
+| `could not open port` | Close any Arduino Serial Monitor using the board, then relaunch |
+| Gripper window says "Gripper closing" but nothing moves | Check `ros2 topic echo /usb_data`: `ERR` means flash `motor_logic.ino`; `OK` means check servo wiring and power (signal on the claw pin, red to 5V, brown/black to GND) |
 
 ## Gripper commands
 
