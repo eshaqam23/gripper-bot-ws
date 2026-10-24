@@ -1,25 +1,30 @@
-from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription
-from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution, Command
-from launch.event_handlers import OnProcessStart
-from launch.actions import RegisterEventHandler
-
-from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
-from launch_ros.parameter_descriptions import ParameterValue
+import os
 
 from ament_index_python.packages import get_package_share_directory
-import os
+from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument
+from launch.substitutions import LaunchConfiguration
+from launch_ros.actions import Node
+
 
 def generate_launch_description():
 
+    config_file = os.path.join(
+        get_package_share_directory('robot_bringup'), 'config', 'params.yaml'
+    )
+
+    # port:=... picks the serial port (e.g. port:=/tmp/fake_arduino)
+    port = DeclareLaunchArgument(
+        'port', default_value='/dev/ttyACM0',
+        description='Serial port to the microcontroller',
+    )
+
     # -------------------- pub_cmds --------------------- #
     teleop_twist_keyboard = Node(
-        package="teleop_twist_keyboard",
-        executable="teleop_twist_keyboard",
-        output="screen",
-        prefix='xterm -e'
+        package='teleop_twist_keyboard',
+        executable='teleop_twist_keyboard',
+        output='screen',
+        prefix='xterm -e',
     )
 
     gripper_keys = Node(
@@ -31,15 +36,15 @@ def generate_launch_description():
 
     # --------------------- control --------------------- #
     motor_commands = Node(
-        package="esp_bridge",
-        executable="motor_commands",
-        output="screen"
+        package='esp_bridge',
+        executable='motor_commands',
+        output='screen',
+        parameters=[config_file, {'port': LaunchConfiguration('port')}],
     )
 
-    return LaunchDescription(
-            [
-                teleop_twist_keyboard,
-                gripper_keys,
-                motor_commands
-            ]
-        )
+    return LaunchDescription([
+        port,
+        teleop_twist_keyboard,
+        gripper_keys,
+        motor_commands,
+    ])
