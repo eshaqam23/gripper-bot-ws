@@ -1,6 +1,6 @@
 from setuptools import find_packages, setup
 
-package_name = 'usb_bridge'
+package_name = 'esp_bridge'
 
 setup(
     name=package_name,
@@ -22,6 +22,6 @@ setup(
         ],
     },
     entry_points={
-        'console_scripts': ['motor_commands = usb_bridge.motor_commands:main'],
+        'console_scripts': ['motor_commands = esp_bridge.motor_commands:main'],
     },
 )

@@ -10,7 +10,7 @@
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>teleop_twist_keyboard</exec_depend>
-  <exec_depend>usb_bridge</exec_depend>
+  <exec_depend>esp_bridge</exec_depend>
   <exec_depend>gripper_controller</exec_depend>
   <exec_depend>xterm</exec_depend>
 
