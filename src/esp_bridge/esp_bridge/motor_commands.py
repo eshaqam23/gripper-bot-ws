@@ -4,7 +4,7 @@ from rclpy.node import Node
 import serial
 from std_msgs.msg import Float32, Float32MultiArray, String
 from std_srvs.srv import Trigger
-from usb_bridge.protocol import claw_angle, drive_message, gripper_message, STOP_MESSAGE
+from esp_bridge.protocol import claw_angle, drive_message, gripper_message, STOP_MESSAGE
 
 
 class Motor_Commands(Node):
@@ -18,15 +18,15 @@ class Motor_Commands(Node):
             Twist, 'cmd_vel', self.cmd_vel_callback, 10
         )
 
-        self.module_pub = self.create_publisher(String, 'usb_data', 10)
+        self.module_pub = self.create_publisher(String, 'esp_data', 10)
         self.ros_pub = self.create_publisher(String, 'ros_data', 10)
 
-        # Hardware settings: placeholders until the real metrics are known
-        # (override in config/params.yaml)
-        self.declare_parameter('port', '/dev/ttyACM0')
-        self.declare_parameter('baud', 9600)
-        self.declare_parameter('wheel_base', 0.2032)  # meters (8 inches)
-        self.declare_parameter('max_speed', 0.5)  # m/s that maps to PWM 255
+        # USB connection
+        self.ser = serial.Serial("/dev/ttyUSB0", 9600, timeout=1)
+        
+        
+        
+
 
         port = self.get_parameter('port').value
         baud = self.get_parameter('baud').value
@@ -63,6 +63,45 @@ class Motor_Commands(Node):
         # safety timeout only stops the car if this node or the link dies
         self.drive_msg = STOP_MESSAGE
         self.heartbeat_timer = self.create_timer(0.1, self.heartbeat_callback)
+        linear_velocity = msg.linear.x
+
+        ### FUNCTIONS ###
+        def cmd_vel_callback(self, msg):
+            angular_velocity = msg.angular.z
+            wheel_base = 0.2032 # 8 inches
+
+            # calculate velocity per wheel
+            left_velocity = linear_velocity - (angular_velocity * wheel_base) / 2
+            right_velocity = linear_velocity  + (angular_velocity * wheel_base) / 2
+
+            # determine wheel speed
+            left_speed = abs(left_velocity)
+            right_speed = abs(right_velocity)
+
+            # determine wheel direction
+            left_forward = 0 if left_velocity < 0 else 1
+            right_forward = 0 if right_velocity < 0 else 1
+
+            # normalize wheel velocity between 0 and 255
+            # max(left_speed) = 0.5, max(right_speed) = 0.5
+            left_speed_normalized = min(int(left_speed / 0.5 * 255), 255)
+            right_speed_normalized = min(int(right_speed / 0.5 * 255), 255)
+
+            message = f"{left_speed_normalized},{left_forward},{right_speed_normalized},{right_forward}\n"
+            self.ser.write(message.encode('utf-8'))
+
+            # Message sent by ROS
+            ros_msg = String()
+            ros_msg.data = message
+            self.ros_pub.publish(ros_msg)
+
+            # Message received from ESP
+            if self.ser.in_waiting > 0:
+                line = self.ser.readline().decode('utf-8').rstrip()
+                module_msg = String()
+                module_msg.data = line
+                self.module_pub.publish(module_msg)
+                self.get_logger().info(f'Publishing: {line}')
 
     def send(self, message):
         self.ser.write(message.encode('utf-8'))
@@ -104,17 +143,6 @@ class Motor_Commands(Node):
         response.success = True
         response.message = 'Gripper opening'
         return response
-
-    def cmd_vel_callback(self, msg):
-        self.drive_msg = drive_message(
-            msg.linear.x, msg.angular.z, self.wheel_base, self.max_speed
-        )
-        self.send(self.drive_msg)
-
-        # Message sent to ESP
-        ros_msg = String()
-        ros_msg.data = self.drive_msg
-        self.ros_pub.publish(ros_msg)
 
     def heartbeat_callback(self):
         self.send(self.drive_msg)

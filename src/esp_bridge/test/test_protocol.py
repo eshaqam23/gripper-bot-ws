@@ -1,5 +1,5 @@
 import pytest
-from usb_bridge.protocol import claw_angle, drive_message, gripper_message, STOP_MESSAGE
+from esp_bridge.protocol import claw_angle, drive_message, gripper_message, STOP_MESSAGE
 
 WHEEL_BASE = 0.2032
 MAX_SPEED = 0.5
