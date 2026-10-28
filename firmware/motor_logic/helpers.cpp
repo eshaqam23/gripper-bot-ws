@@ -90,7 +90,7 @@ void driveSide(int forwardPin, int backPin, int enPin, int pwm, int dir) {
   }
 }
 
-void setLeftMotor(int pwm, int dir) { driveSide(IN3, IN4, ENB, pwm, dir); }
+void setLeftMotor(int pwm, int dir) { driveSide(IN4, IN3, ENB, pwm, dir); }
 
 void setRightMotor(int pwm, int dir) { driveSide(IN2, IN1, ENA, pwm, dir); }
 

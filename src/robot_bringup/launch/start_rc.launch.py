@@ -14,6 +14,7 @@ def generate_launch_description():
     )
 
     # port:=... picks the serial port (e.g. port:=/tmp/fake_arduino)
+    # or the ESP's WiFi address (e.g. port:=socket://192.168.1.50:3333)
     port = DeclareLaunchArgument(
         'port', default_value='/dev/ttyACM0',
         description='Serial port to the microcontroller',
