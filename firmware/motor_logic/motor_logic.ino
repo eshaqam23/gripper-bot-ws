@@ -19,7 +19,7 @@ WiFiClient client;
 void connectWifi();
 #endif
 
-Stream *link = &Serial;
+Stream *conn = &Serial;
 char message[32];
 unsigned long lastDriveMs = 0;
 bool driving = false;
@@ -106,11 +106,11 @@ void loop() {
     client = server.accept();  // a new connection replaces the old one
     client.setNoDelay(true);
   }
-  link = client.connected() ? (Stream *)&client : (Stream *)&Serial;
+  conn = client.connected() ? (Stream *)&client : (Stream *)&Serial;
 #endif
 
-  if (link->available()) {
-    int bytesRead = link->readBytesUntil('\n', message, sizeof(message) - 1);
+  if (conn->available()) {
+    int bytesRead = conn->readBytesUntil('\n', message, sizeof(message) - 1);
     message[bytesRead] = '\0';
 
     bool ok = false;
@@ -121,7 +121,7 @@ void loop() {
       }
     }
 
-    link->println(ok ? "OK" : "ERR");
+    conn->println(ok ? "OK" : "ERR");
   }
 
   // Safety stop: lost connection or ROS side stopped sending
