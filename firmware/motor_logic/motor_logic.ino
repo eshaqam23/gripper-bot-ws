@@ -9,36 +9,6 @@ char message[32];
 unsigned long lastDriveMs = 0;
 bool driving = false;
 
-void setLeftMotor(int pwm, int dir) {
-  pwm = constrain(pwm, 0, 255);
-
-  if (pwm == 0) {
-    stopLeft();
-    analogWrite(ENB, 0);
-    return;
-  }
-
-  if (dir == 1) leftForward();
-  else leftBackwards();
-
-  analogWrite(ENB, pwm);
-}
-
-void setRightMotor(int pwm, int dir) {
-  pwm = constrain(pwm, 0, 255);
-
-  if (pwm == 0) {
-    stopRight();
-    analogWrite(ENA, 0);
-    return;
-  }
-
-  if (dir == 1) rightForward();
-  else rightBackwards();
-
-  analogWrite(ENA, pwm);
-}
-
 bool handleDrive(const char *args) {
   int leftPwm, leftDir, rightPwm, rightDir;
 
