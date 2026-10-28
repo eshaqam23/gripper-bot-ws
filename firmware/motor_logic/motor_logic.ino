@@ -77,31 +77,51 @@ void setup() {
 }
 
 #ifdef USE_WIFI
-// Waits up to 10 s; if WiFi isn't there the board still works over USB.
+// Doesn't wait: WiFi keeps trying in the background and the board still
+// works over USB meanwhile.
 void connectWifi() {
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);  // lower latency
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+}
 
-  unsigned long startMs = millis();
-  while (WiFi.status() != WL_CONNECTED && millis() - startMs < 10000) {
-    delay(250);
+// Prints the WiFi status every 3 s until a WiFi client connects, so the
+// address shows up whenever the Serial Monitor is opened.
+void reportWifi() {
+  static unsigned long lastReportMs = 0;
+  static bool serverStarted = false;
+
+  if (WiFi.status() == WL_CONNECTED && !serverStarted) {
+    server.begin();
+    serverStarted = true;
   }
 
-  if (WiFi.status() == WL_CONNECTED) {
-    server.begin();
-    Serial.print("WiFi connected, use port:=socket://");
-    Serial.print(WiFi.localIP());
-    Serial.print(":");
-    Serial.println(WIFI_PORT);
-  } else {
-    Serial.println("WiFi not connected, using USB serial only");
+  if (client.connected() || millis() - lastReportMs < 3000) return;
+  lastReportMs = millis();
+
+  switch (WiFi.status()) {
+    case WL_CONNECTED:
+      Serial.print("WiFi connected, use port:=socket://");
+      Serial.print(WiFi.localIP());
+      Serial.print(":");
+      Serial.println(WIFI_PORT);
+      break;
+    case WL_NO_SSID_AVAIL:
+      Serial.println("WiFi: network \"" WIFI_SSID "\" not found (must be 2.4 GHz)");
+      break;
+    case WL_CONNECT_FAILED:
+      Serial.println("WiFi: connection failed, check the password");
+      break;
+    default:
+      Serial.println("WiFi: connecting...");
+      break;
   }
 }
 #endif
 
 void loop() {
 #ifdef USE_WIFI
+  reportWifi();
   if (server.hasClient()) {
     client = server.accept();  // a new connection replaces the old one
     client.setNoDelay(true);
