@@ -56,8 +56,9 @@ class Motor_Commands(Node):
             Trigger, 'gripper/release', self.release_callback
         )
 
-        # Microcontroller connection
-        self.ser = serial.Serial(port, baud, timeout=1)
+        # Microcontroller connection: a serial port (/dev/ttyACM0) or the
+        # ESP's WiFi address (socket://<ip>:3333)
+        self.ser = serial.serial_for_url(port, baud, timeout=1)
 
         # Resend the current drive command at 10 Hz so the microcontroller's
         # safety timeout only stops the car if this node or the link dies
