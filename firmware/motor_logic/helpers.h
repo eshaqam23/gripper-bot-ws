@@ -11,21 +11,22 @@
 // Arduino IDE (Tools > Board) is used automatically.
 // Right motors: IN1, IN2, ENA. Left motors: IN3, IN4, ENB.
 // Set JOINT_PIN to -1 if there is no joint servo; its angle is then ignored.
+// Set ENA/ENB to -1 if they aren't wired (driver jumpers on, or a driver
+// without enable pins); speed is then PWM'd on the IN pins instead.
 
 #if defined(ESP32)
-// ESP32-C6 (mule). IN1-IN4 from electrical; ENA/ENB and the claw are
-// placeholders until electrical wires them (ENA/ENB copied from the Uno;
-// claw on 10 because 9 is IN4 here).
+// ESP32-C6 (mule), pins from electrical. ENA/ENB aren't wired.
 // Avoid GPIO 4, 5, 8, 9, 15 (boot strapping), 12/13 (USB) and 16/17 (UART0).
-// IN4 is on GPIO 9 (the BOOT pin): if the board won't boot or flash with the
-// motor driver plugged in, move IN4 to a free pin.
+// IN4 (GPIO 9, the BOOT pin) and the claw (GPIO 15) are strapping pins: if the
+// board won't boot or flash with them plugged in, unplug them for the upload
+// or move them to a free pin.
 const int IN1 = 20;  // brown
 const int IN2 = 19;  // white
 const int IN3 = 18;  // green
 const int IN4 = 9;   // blue
-const int ENA = 6;   // placeholder
-const int ENB = 5;   // placeholder (boot pin, fine once running)
-const int CLAW_PIN = 10;   // placeholder
+const int ENA = -1;  // not wired
+const int ENB = -1;  // not wired
+const int CLAW_PIN = 15;
 const int JOINT_PIN = -1;  // TBD: not sure there is a joint servo yet
 
 #else
@@ -78,12 +79,9 @@ void initServos();
 void writeClawPulse(int us);
 void writeJointPulse(int us);
 
-void leftForward();
-void leftBackwards();
-void stopLeft();
-void rightForward();
-void rightBackwards();
-void stopRight();
+// pwm 0-255 (0 = stop), dir 1 = forward, 0 = backward
+void setLeftMotor(int pwm, int dir);
+void setRightMotor(int pwm, int dir);
 void stall();
 
 #endif

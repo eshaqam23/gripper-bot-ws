@@ -4,16 +4,18 @@
 
 // ----------- Initialization ---------- //
 void initPins() {
-  pinMode(IN3, OUTPUT);
-  pinMode(IN4, OUTPUT);
-  pinMode(ENB, OUTPUT);
-
-  pinMode(IN1, OUTPUT);
-  pinMode(IN2, OUTPUT);
-  pinMode(ENA, OUTPUT);
-
-  analogWrite(ENA, 0);
-  analogWrite(ENB, 0);
+  // IN pins are plain outputs only when an enable pin does the PWM
+  if (ENA >= 0) {
+    pinMode(IN1, OUTPUT);
+    pinMode(IN2, OUTPUT);
+    pinMode(ENA, OUTPUT);
+  }
+  if (ENB >= 0) {
+    pinMode(IN3, OUTPUT);
+    pinMode(IN4, OUTPUT);
+    pinMode(ENB, OUTPUT);
+  }
+  stall();
 
   Serial.begin(9600);
   delay(100);
@@ -68,42 +70,31 @@ void writeJointPulse(int us) {
 #endif
 
 // ----------- Individual Side ---------- //
-void leftForward() {
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, LOW);
+// forwardPin is the IN pin driven HIGH to go forward, backPin the other one.
+// With an enable pin: IN pins set direction, enable gets the PWM.
+// Without one (enPin = -1): the IN pin for the chosen direction gets the PWM
+// and the other is held LOW. The IN pins then stay on analogWrite only, since
+// on the ESP32 a pin attached to PWM ignores digitalWrite.
+void driveSide(int forwardPin, int backPin, int enPin, int pwm, int dir) {
+  pwm = constrain(pwm, 0, 255);
+  int onPin = (dir == 1) ? forwardPin : backPin;
+  int offPin = (dir == 1) ? backPin : forwardPin;
+
+  if (enPin >= 0) {
+    digitalWrite(offPin, LOW);
+    digitalWrite(onPin, pwm > 0 ? HIGH : LOW);
+    analogWrite(enPin, pwm);
+  } else {
+    analogWrite(offPin, 0);
+    analogWrite(onPin, pwm);
+  }
 }
 
-void leftBackwards() {
-  digitalWrite(IN3, LOW);
-  digitalWrite(IN4, HIGH);
-}
+void setLeftMotor(int pwm, int dir) { driveSide(IN3, IN4, ENB, pwm, dir); }
 
-void stopLeft() {
-  digitalWrite(IN3, LOW);
-  digitalWrite(IN4, LOW);
-}
+void setRightMotor(int pwm, int dir) { driveSide(IN2, IN1, ENA, pwm, dir); }
 
-void rightForward() {
-  digitalWrite(IN1, LOW);
-  digitalWrite(IN2, HIGH);
-}
-
-void rightBackwards() {
-  digitalWrite(IN1, HIGH);
-  digitalWrite(IN2, LOW);
-}
-
-void stopRight() {
-  digitalWrite(IN1, LOW);
-  digitalWrite(IN2, LOW);
-}
-
-void stall()
-{
-  digitalWrite(IN1, LOW);
-  digitalWrite(IN2, LOW);
-  digitalWrite(IN3, LOW);
-  digitalWrite(IN4, LOW);
-  analogWrite(ENA, 0);
-  analogWrite(ENB, 0);
+void stall() {
+  setLeftMotor(0, 1);
+  setRightMotor(0, 1);
 }
