@@ -16,6 +16,12 @@ htmlcov/
 venv/
 env/
 
+# Arduino and embedded build artifacts
+*.elf
+*.bin
+*.hex
+*.map
+
 # Editor and OS files
 .vscode/
 .idea/
