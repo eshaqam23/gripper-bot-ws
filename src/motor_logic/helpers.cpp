@@ -1,31 +1,51 @@
-// Implementation of helper functions
+// Implementation of helper functions for motor and gripper control.
 
 #include "helpers.h"
-#include <ESP32Servo.h>
 
-Servo gripperServo;
+// Gripper servo PWM settings (50 Hz = 20 ms period)
+static const int SERVO_FREQ = 50;
+static const int SERVO_RES_BITS = 14;
+static const int SERVO_MIN_US = 500;
+static const int SERVO_MAX_US = 2400;
 
 // ----------- Initialization ---------- //
 void initPins() {
+  // Start serial first so the status prints below are visible.
+  Serial.begin(9600);
+  delay(1500);
+
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
-  pinMode(ENB, OUTPUT);
-
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
-  pinMode(ENA, OUTPUT);
 
   analogWrite(ENA, 0);
   analogWrite(ENB, 0);
 
-  gripperServo.attach(GRIPPER_SERVO_PIN);
-  closeGripper();
+  bool ok = ledcAttach(GRIPPER_SERVO_PIN, SERVO_FREQ, SERVO_RES_BITS);
+  Serial.println(ok ? "Servo LEDC attached" : "Servo LEDC attach FAILED");
 
-  Serial.begin(9600);
-  delay(100);
+  closeGripper();
 }
 
-// ----------- Individual Side ---------- //
+// ----------- Gripper ---------- //
+// Converts an angle (0-180) to a servo pulse width, then to an LEDC duty value.
+void setGripperAngle(int angle) {
+  angle = constrain(angle, 0, 180);
+  int pulseUs = map(angle, 0, 180, SERVO_MIN_US, SERVO_MAX_US);
+  uint32_t duty = ((uint32_t)pulseUs * ((1 << SERVO_RES_BITS) - 1)) / 20000;
+  ledcWrite(GRIPPER_SERVO_PIN, duty);
+}
+
+void openGripper() {
+  setGripperAngle(GRIPPER_OPEN_ANGLE);
+}
+
+void closeGripper() {
+  setGripperAngle(GRIPPER_CLOSED_ANGLE);
+}
+
+// ----------- Individual sides ---------- //
 void leftForward() {
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, LOW);
@@ -56,26 +76,13 @@ void stopRight() {
   digitalWrite(IN2, LOW);
 }
 
-void stall()
-{
+// ----------- Emergency stop ---------- //
+// Cuts direction and enable pins on both motors.
+void stall() {
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW);
   digitalWrite(IN3, LOW);
   digitalWrite(IN4, LOW);
   digitalWrite(ENA, LOW);
   digitalWrite(ENB, LOW);
-}
-
-// ----------- Gripper ---------- //
-void setGripperAngle(int angle) {
-  angle = constrain(angle, 0, 180);
-  gripperServo.write(angle);
-}
-
-void openGripper() {
-  setGripperAngle(GRIPPER_OPEN_ANGLE);
-}
-
-void closeGripper() {
-  setGripperAngle(GRIPPER_CLOSED_ANGLE);
 }

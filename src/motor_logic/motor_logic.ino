@@ -1,7 +1,16 @@
+// Motor and gripper control over serial.
+//
+// Commands (newline-terminated):
+//   D,<leftPwm>,<leftDir>,<rightPwm>,<rightDir>   drive (PWM 0-255, dir 1 = forward, 0 = backward)
+//   G,<angle>                                     gripper angle (0-180)
+//
+// Replies: "OK DRIVE", "OK GRIPPER", or "ERR" if the command can't be parsed.
+
 #include "helpers.h"
 
 char message[32];
 
+// Left motor speed is set on ENB.
 void setLeftMotor(int pwm, int dir) {
   pwm = constrain(pwm, 0, 255);
 
@@ -17,6 +26,7 @@ void setLeftMotor(int pwm, int dir) {
   analogWrite(ENB, pwm);
 }
 
+// Right motor speed is set on ENA.
 void setRightMotor(int pwm, int dir) {
   pwm = constrain(pwm, 0, 255);
 
@@ -59,4 +69,3 @@ void loop() {
     }
   }
 }
-
